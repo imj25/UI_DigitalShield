@@ -1,0 +1,12 @@
+Digital_Shield_data/
+.python-version
+.env
+.ipynb_checkpoints
+jupyter.txt
+Digital_Shield_Notebooks/
+__pycache__/
+.DS_Store
+Digital_Shield_Packages/models/
+models/
+Digital_Shield_Avatars/
+digital_shield_packages.egg-info
