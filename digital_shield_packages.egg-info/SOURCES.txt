@@ -1,7 +1,0 @@
-setup.py
-digital_shield_packages.egg-info/PKG-INFO
-digital_shield_packages.egg-info/SOURCES.txt
-digital_shield_packages.egg-info/dependency_links.txt
-digital_shield_packages.egg-info/not-zip-safe
-digital_shield_packages.egg-info/requires.txt
-digital_shield_packages.egg-info/top_level.txt
