@@ -1,0 +1,17 @@
+Metadata-Version: 2.2
+Name: digital-shield-packages
+Version: 0.1.0
+Summary: ML-based cybersecurity project with financial loss and severity prediction models
+Author: Digital Shield Team
+License: MIT
+Requires-Dist: streamlit==1.50.0
+Requires-Dist: fastapi
+Requires-Dist: uvicorn==0.38.0
+Requires-Dist: requests==2.32.5
+Requires-Dist: python-dotenv==1.1.1
+Requires-Dist: altair==5.5.0
+Requires-Dist: plotly==6.3.1
+Dynamic: author
+Dynamic: license
+Dynamic: requires-dist
+Dynamic: summary
