@@ -1142,7 +1142,7 @@ def financial_loss_page():
             st.markdown(f"""
             <div class="warning-box">
                 🕵️‍ <strong>{sev_title} Risk Notice:</strong> This prediction indicates a financial risk. 
-                Take appropriate security actions and consult the Ḥimā chatbot for personalized recommendations.
+                Take appropriate security actions and consult the <span style="background: rgba(164, 41, 170, 0.25); padding: 2px 6px; border-radius: 6px; font-weight: 800; color: #2c2c2c;">Ḥimā chatbot</span> for personalized recommendations.
             </div>
             """, unsafe_allow_html=True)
         else:
