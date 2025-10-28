@@ -471,13 +471,15 @@ if "success_start_time" not in st.session_state:
 # Function to get avatar based on current state
 def get_avatar_for_state(state):
     """Get the appropriate avatar image based on the current state"""
-    avatar_mapping = {
-        "welcome": "images/Welcome.jpg",
-        "processing": "images/ProcessingState.jpg",
-        "success": "images/Welcome.jpg",  # Use welcome for success
-        "error": "images/ErrorState.jpg"
+    images_dir = Path(__file__).parent / "images"
+    filename_mapping = {
+        "welcome": "Welcome.jpg",
+        "processing": "ProcessingState.jpg",
+        "success": "Welcome.jpg",  # Use welcome for success
+        "error": "ErrorState.jpg",
     }
-    return avatar_mapping.get(state, "images/Welcome.jpg")
+    filename = filename_mapping.get(state, "Welcome.jpg")
+    return str((images_dir / filename).resolve())
 
 def call_rag_api(query: str) -> Dict[str, Any]:
     """Call external RAG API with retries/backoff and endpoint fallback, return response."""
