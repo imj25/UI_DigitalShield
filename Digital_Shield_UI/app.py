@@ -16,8 +16,10 @@ import html
 
 # Add project root to path for RAG system imports
 # From UI folder, go up to main project directory
-project_root = Path(__file__).parent.parent  # UI -> Digital_Shield1
+project_root = Path(__file__).parent.parent  # UI -> project root
 sys.path.insert(0, str(project_root))
+ASSETS_DIR = Path(__file__).parent
+AVATAR_DIR = (project_root / "Digital_Shield_Avatars").resolve()
 
 # External API configuration
 API_BASE_URL = os.getenv(
@@ -470,14 +472,16 @@ if "success_start_time" not in st.session_state:
 
 # Function to get avatar based on current state
 def get_avatar_for_state(state):
-    """Get the appropriate avatar image based on the current state"""
-    avatar_mapping = {
-        "welcome": "../Digital_Shield_Avatars/Welcome.jpg",
-        "processing": "../Digital_Shield_Avatars/Processing State.jpg",
-        "success": "../Digital_Shield_Avatars/Welcome.jpg",  # Use welcome for success
-        "error": "../Digital_Shield_Avatars/Error State.jpg"
+    """Get the appropriate avatar image absolute path based on the current state"""
+    file_mapping = {
+        "welcome": "Welcome.jpg",
+        "processing": "Processing State.jpg",
+        "success": "Welcome.jpg",  # Use welcome for success
+        "error": "Error State.jpg",
     }
-    return avatar_mapping.get(state, "../Digital_Shield_Avatars/Welcome.jpg")
+    filename = file_mapping.get(state, "Welcome.jpg")
+    avatar_path = (AVATAR_DIR / filename).resolve()
+    return str(avatar_path)
 
 def call_rag_api(query: str) -> Dict[str, Any]:
     """Call external RAG API with retries/backoff and endpoint fallback, return response."""
@@ -1268,7 +1272,7 @@ def main_dashboard_page():
     
     # Load and display the Digital Shield logo
     try:
-        logo_path = "lmags/p2.jpg"
+        logo_path = str((ASSETS_DIR / "images" / "p2.jpg").resolve())
         if os.path.exists(logo_path):
             # Convert image to base64 for display
             with open(logo_path, "rb") as f:
