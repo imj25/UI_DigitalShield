@@ -48,10 +48,38 @@ st.set_page_config(
 # Custom CSS for the entire application
 st.markdown("""
     <style>
+    :root {
+        /* Core brand colors */
+        --primary: #a429aa; /* neon pink */
+        --primaryHover: #69196c; /* darker neon pink for hover states */
+        --accent: #69196c; /* same as dark neon pink for accents */
+
+        /* Neutral tones */
+        --bg: #000000; /* black background */
+        --surface: #3f3e3e; /* dark grey surfaces like cards or panels */
+        --text: #ffffff; /* white text for contrast */
+        --mutedText: #a6a6a6; /* gray for subtitles or secondary info */
+
+        /* Status colors */
+        --success: #4caf50; /* green tone */
+        --warning: #ffb300; /* amber/yellow tone */
+        --danger: #f44336; /* red tone */
+        /* Darker shades for gradients */
+        --successDark: #2e7d32;
+        --warningDark: #ff8f00;
+        --dangerDark: #c62828;
+
+        /* Optional gradient */
+        --gradient-primary: linear-gradient(135deg, #a429aa, #69196c);
+        --gradient-surface-alt: linear-gradient(135deg, #2a2a2a, #101010);
+    }
+
+    /* App base */
+    .stApp, body { background-color: var(--bg); color: var(--text); }
     /* Main dashboard styling */
     .main-header {
             text-align: center;
-        color: #1f4e79;
+        color: var(--primary);
         margin-bottom: 2rem;
         font-size: 2.5rem;
         font-weight: bold;
@@ -60,7 +88,7 @@ st.markdown("""
     
     .sub-header {
             text-align: center;
-        color: #666;
+        color: var(--mutedText);
         font-size: 1.2rem;
         margin-bottom: 2rem;
     }
@@ -73,21 +101,21 @@ st.markdown("""
     .stTabs [data-baseweb="tab"] {
         height: 50px;
         white-space: pre-wrap;
-        background-color: #f0f2f6;
+        background-color: var(--surface);
         border-radius: 10px 10px 0 0;
-        color: #1f4e79;
+        color: var(--text);
         font-weight: bold;
         font-size: 1.1rem;
     }
     
     .stTabs [aria-selected="true"] {
-        background-color: #1f4e79;
-        color: white;
+        background: var(--gradient-primary);
+        color: var(--text);
     }
     
     .stTabs [data-baseweb="tab"]:hover {
-        background-color: #2c5aa0;
-        color: white;
+        background-color: var(--primaryHover);
+        color: var(--text);
     }
     
     /* Avatar container styling for RAG chatbot */
@@ -103,7 +131,7 @@ st.markdown("""
     .stImage img {
         border-radius: 50% !important;
         object-fit: cover !important;
-        border: 3px solid #1f4e79 !important;
+        border: 3px solid var(--primary) !important;
         box-shadow: 0 4px 8px rgba(31, 78, 121, 0.2) !important;
         width: 120px !important;
         height: 120px !important;
@@ -112,7 +140,7 @@ st.markdown("""
     div[data-testid="stImage"] img {
         border-radius: 50% !important;
         object-fit: cover !important;
-        border: 3px solid #1f4e79 !important;
+        border: 3px solid var(--primary) !important;
         box-shadow: 0 4px 8px rgba(31, 78, 121, 0.2) !important;
         width: 120px !important;
         height: 120px !important;
@@ -121,11 +149,11 @@ st.markdown("""
     /* Custom chat input styling */
     .stChatInput > div > div > input {
         border-radius: 25px;
-        border: 2px solid #1f4e79;
+        border: 2px solid var(--primary);
     }
     
     .stChatInput > div > div > input:focus {
-        border-color: #2c5aa0;
+        border-color: var(--primaryHover);
         box-shadow: 0 0 0 0.2rem rgba(31, 78, 121, 0.25);
     }
     
@@ -136,8 +164,8 @@ st.markdown("""
     
     /* Button styling */
     .stButton > button {
-        background-color: #1f4e79;
-        color: white;
+        background: var(--gradient-primary);
+        color: var(--text);
         border-radius: 20px;
         border: none;
         padding: 0.6rem 1.25rem;
@@ -147,13 +175,13 @@ st.markdown("""
     }
     
     .stButton > button:hover {
-        background-color: #2c5aa0;
+        background: var(--primaryHover);
     }
     
     /* Financial Loss Model styling */
     .metric-card {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
+        background: var(--gradient-primary);
+        color: var(--text);
         padding: 1.5rem;
         border-radius: 1rem;
         margin: 0.5rem 0;
@@ -162,21 +190,23 @@ st.markdown("""
     }
     
     .metric-card h3 {
-        color: white;
+        color: var(--text);
         margin: 0;
         font-size: 1.2rem;
         font-weight: bold;
     }
     
     .metric-card p {
-        color: #f0f0f0;
+        color: var(--text);
         margin: 0.5rem 0 0 0;
         font-size: 0.9rem;
     }
     
     .prediction-result {
-        background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
-        color: white;
+        background:
+            linear-gradient(135deg, rgba(255,255,255,0.12), rgba(0,0,0,0) 40%),
+            linear-gradient(135deg, var(--danger) 0%, var(--dangerDark) 85%);
+        color: var(--text);
         padding: 1.25rem;
         border-radius: 1rem;
         text-align: center;
@@ -186,7 +216,7 @@ st.markdown("""
     }
     
     .prediction-result h2 {
-        color: white;
+        color: var(--text);
         font-size: 1.8rem;
         font-weight: bold;
         margin: 0;
@@ -194,18 +224,18 @@ st.markdown("""
     }
     
     .prediction-result p {
-        color: #f0f0f0;
+        color: var(--text);
         font-size: 1.2rem;
         margin: 0.5rem 0 0 0;
     }
     
     .warning-box {
-        background: linear-gradient(135deg, #feca57 0%, #ff9ff3 100%);
+        background: var(--warning);
         border: none;
         border-radius: 1rem;
         padding: 1.5rem;
         margin: 1rem 0;
-        box-shadow: 0 4px 15px rgba(254, 202, 87, 0.3);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         color: #2c2c2c;
     }
     
@@ -215,8 +245,8 @@ st.markdown("""
     }
     
     .success-box {
-        background: linear-gradient(135deg, #00b894 0%, #00cec9 100%);
-        color: white;
+        background: var(--success);
+        color: var(--text);
         padding: 1rem;
         border-radius: 0.5rem;
         margin: 1rem 0;
@@ -226,49 +256,49 @@ st.markdown("""
     }
     
     .section-header {
-        color: #2d3436;
+        color: var(--text);
         font-size: 1.5rem;
             font-weight: bold;
         margin: 1.5rem 0 1rem 0;
         padding-bottom: 0.5rem;
-        border-bottom: 3px solid #74b9ff;
+        border-bottom: 3px solid var(--primary);
     }
     
     .feature-section {
-        background: linear-gradient(135deg, #a29bfe 0%, #6c5ce7 100%);
-        color: white;
+        background: var(--surface);
+        color: var(--text);
         padding: 1rem;
         border-radius: 0.5rem;
         margin: 0.5rem 0;
     }
     
     .feature-section h4 {
-        color: white;
+        color: var(--text);
         margin: 0 0 0.5rem 0;
     }
     
     .risk-low {
-        background: linear-gradient(135deg, #00b894 0%, #00cec9 100%);
-        color: white;
+        background: linear-gradient(135deg, var(--success), var(--successDark));
+        color: var(--text);
     }
     
     .risk-medium {
-        background: linear-gradient(135deg, #fdcb6e 0%, #e17055 100%);
-        color: white;
+        background: linear-gradient(135deg, var(--warning), var(--warningDark));
+        color: var(--text);
     }
     
     .risk-high {
-        background: linear-gradient(135deg, #e17055 0%, #d63031 100%);
-        color: white;
+        background: linear-gradient(135deg, var(--danger), var(--dangerDark));
+        color: var(--text);
     }
     
     .risk-critical {
-        background: linear-gradient(135deg, #8B0000 0%, #5A0000 100%);
-        color: white;
+        background: linear-gradient(135deg, var(--danger), var(--dangerDark));
+        color: var(--text);
     }
     
     .input-container {
-        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        background: var(--surface);
         padding: 1.5rem;
         border-radius: 1rem;
         margin: 1rem 0;
@@ -280,10 +310,11 @@ st.markdown("""
         border-radius: 16px;
         padding: 18px;
         text-align: center;
-        box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
         transition: all 0.3s ease;
         min-height: 150px;
-        color: #fdf6e6;
+        color: var(--text);
+        background: var(--surface);
         display: flex;
         flex-direction: column;
         justify-content: center;
@@ -292,7 +323,7 @@ st.markdown("""
     
     .card:hover {
         transform: translateY(-8px);
-        box-shadow: 0 0 35px rgba(255, 255, 255, 0.15);
+        box-shadow: 0 0 35px rgba(0, 0, 0, 0.35);
     }
     
     .card-title {
@@ -309,17 +340,10 @@ st.markdown("""
         line-height: 1.35;
     }
     
-    .card-blue {
-        background: linear-gradient(135deg, #1f3b73, #2a5298);
-    }
-    
-    .card-cyan {
-        background: linear-gradient(135deg, #136a8a, #267871);
-    }
-    
-    .card-purple {
-        background: linear-gradient(135deg, #42275a, #734b6d);
-    }
+    /* Subtle dark gradients for main page cards */
+    .card-blue { background: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(0,0,0,0) 35%), linear-gradient(135deg, #2b2b2b 0%, #121212 85%); }
+    .card-cyan { background: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(0,0,0,0) 35%), linear-gradient(135deg, #343434 0%, #141414 85%); }
+    .card-purple { background: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(0,0,0,0) 35%), linear-gradient(135deg, #3a3a3a 0%, #0f0f0f 85%); }
     
     /* Expander styling */
         .streamlit-expanderHeader {
@@ -345,27 +369,20 @@ st.markdown("""
         }
     
         .streamlit-expanderContent {
-            background-color: #141a2b !important;
+            background: var(--gradient-surface-alt) !important;
             border-radius: 0 0 12px 12px !important;
             padding: 18px 22px !important;
-            color: #dcdcdc !important;
+            color: var(--text) !important;
             font-size: 1rem !important;
             line-height: 1.6 !important;
             margin-bottom: 20px !important;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
             animation: fadeIn 0.4s ease-in-out !important;
         }
 
-        .exp-blue .streamlit-expanderHeader {
-            background: linear-gradient(135deg, #1f3b73, #2a5298) !important;
-        }
-    
-        .exp-cyan .streamlit-expanderHeader {
-            background: linear-gradient(135deg, #136a8a, #267871) !important;
-        }
-    
-        .exp-purple .streamlit-expanderHeader {
-            background: linear-gradient(135deg, #42275a, #734b6d) !important;
-        }
+        .exp-blue .streamlit-expanderHeader { background: var(--gradient-primary) !important; }
+        .exp-cyan .streamlit-expanderHeader { background: var(--gradient-primary) !important; }
+        .exp-purple .streamlit-expanderHeader { background: var(--gradient-primary) !important; }
 
         @keyframes fadeIn {
             from {opacity: 0; transform: translateY(-5px);}
@@ -405,11 +422,11 @@ st.markdown("""
             gap: 16px;
             margin: 0 0 8px 0;
         }
-        .arrows-heading { margin: 0; color: #1f4e79; font-size: 1.75rem; font-weight: 700; }
+        .arrows-heading { margin: 0; color: var(--primary); font-size: 1.75rem; font-weight: 700; }
         .arrows-header a { display: none !important; }
         .arrows-header svg {
             width: 64px; height: 40px;
-            stroke: #1f4e79;
+            stroke: var(--primary);
             stroke-width: 3;
             fill: none;
             opacity: 0.9;
@@ -544,6 +561,18 @@ def generate_response(user_input, avatar_placeholder):
         else:
             avatar_placeholder.markdown("<div style='font-size: 100px; text-align: center;'></div>", unsafe_allow_html=True)
         return f"There was an error contacting the RAG service: {result.get('message', 'Unknown error')}"
+
+# Reusable footer
+def render_footer():
+    st.markdown(
+        """
+        <div style="text-align: center; padding: 1rem 0; color: #555; margin-top: 2rem;">
+            <strong>Digital Shield</strong> - Securing Your Digital World with Saudi Heritage of Protection<br/>
+            <span style="font-size: 0.95rem; color: #777;">built with <span style="color:#e25555;">❤</span> by Majid, Nawaf, Nouf, Rawaf</span>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 def call_financial_loss_api(features: Dict[str, Any]) -> Dict[str, Any]:
     """Call external Financial Loss API at /predict_financial_loss and return status/data."""
@@ -980,6 +1009,8 @@ def rag_chatbot_page():
                 st.session_state.messages.append({"role": "user", "content": user_message})
                 st.session_state.messages.append({"role": "assistant", "content": response})
 
+    
+
 # Financial Loss Model Page
 def financial_loss_page():
     """Financial Loss Model page with interactive components (via external API)"""
@@ -1002,7 +1033,7 @@ def financial_loss_page():
         col1, col2 = st.columns(2)
         
         with col1:
-            st.markdown('<div class="feature-section"><h4>📊 Essential Information</h4></div>', unsafe_allow_html=True)
+            st.markdown('<div class="feature-section card-blue"><h4>📊 Essential Information</h4></div>', unsafe_allow_html=True)
             
             # Essential inputs only
             affected_users = st.number_input(
@@ -1020,7 +1051,7 @@ def financial_loss_page():
             )
         
         with col2:
-            st.markdown('<div class="feature-section"><h4>🎯 Attack & Target Details</h4></div>', unsafe_allow_html=True)
+            st.markdown('<div class="feature-section card-cyan"><h4>🎯 Attack & Target Details</h4></div>', unsafe_allow_html=True)
             
             attack_type = st.selectbox(
                 "⚔️ Attack Type",
@@ -1108,7 +1139,7 @@ def financial_loss_page():
             )
             st.markdown(f"""
             <div class="warning-box">
-                ⚠️ <strong>{sev_title} Risk Notice:</strong> This prediction indicates a financial risk. 
+                🕵️‍ <strong>{sev_title} Risk Notice:</strong> This prediction indicates a financial risk. 
                 Take appropriate security actions and consult the Ḥimā chatbot for personalized recommendations.
             </div>
             """, unsafe_allow_html=True)
@@ -1120,6 +1151,7 @@ def financial_loss_page():
                 st.error(f"❌ Error: {status_code}")
                 st.code(api_result.get("text", ""))
             
+    
 
 # Cybersecurity Information Center Page
 def cybersecurity_info_page():
@@ -1228,6 +1260,8 @@ def cybersecurity_info_page():
             """
         )
 
+    
+
 # Main Dashboard Page
 def main_dashboard_page():
     """Main dashboard landing page with Digital Shield branding"""
@@ -1263,7 +1297,7 @@ def main_dashboard_page():
         "Harness the power of machine learning and AI chat assistance to make informed, data-driven security decisions"
     )
     full_welcome_text_rich = (
-        "Welcome to <strong>Digital Shield</strong> — your intelligent dashboard for analyzing cybersecurity data and predicting potential financial losses. "
+        "Welcome to <strong>Digital Shield</strong> - your intelligent dashboard for analyzing cybersecurity data and predicting potential financial losses. "
         "Harness the power of machine learning and AI chat assistance to make informed, data-driven security decisions"
     )
     if "welcome_typed_done" not in st.session_state:
@@ -1359,13 +1393,8 @@ def main_dashboard_page():
             st.session_state.current_tab = "Cybersecurity Information Center"
             st.rerun()
     
-    # Footer (simple text, no emoji or card styling)
-    st.markdown("""
-    <div style="text-align: center; padding: 1rem 0; color: #555; margin-top: 2rem;">
-        <strong>Digital Shield</strong> — Securing Your Digital World with Saudi Heritage of Protection<br/>
-        <span style="font-size: 0.95rem; color: #777;">built with <span style="color:#e25555;">❤</span> by Majid, Nawaf, Nouf, Rawaf</span>
-    </div>
-    """, unsafe_allow_html=True)
+    # Footer
+    render_footer()
 
 # Main application
 def main():
