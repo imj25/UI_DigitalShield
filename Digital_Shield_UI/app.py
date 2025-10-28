@@ -11,27 +11,31 @@ from typing import Dict, Any
 from PIL import Image
 import base64
 from io import BytesIO
+import requests
+import html
 
 # Add project root to path for RAG system imports
 # From UI folder, go up to main project directory
 project_root = Path(__file__).parent.parent  # UI -> Digital_Shield1
 sys.path.insert(0, str(project_root))
 
-# Import RAG system
-try:
-    from Digital_Shield_Packages.RAG.main import RAGSystem
-    RAG_AVAILABLE = True
-except ImportError as e:
-    st.warning(f"RAG system not available: {e}")
-    RAG_AVAILABLE = False
-
-# Import the financial loss model
-try:
-    from Digital_Shield_Packages.ML.fanancial_loss_model import ModelSaver
-    MODEL_AVAILABLE = True
-except ImportError as e:
-    st.warning(f"Financial loss model not available: {e}")
-    MODEL_AVAILABLE = False
+# External API configuration
+API_BASE_URL = os.getenv(
+    "DIGITAL_SHIELD_API_BASE",
+    "https://digitalshield-1023859742049.europe-west1.run.app"
+).rstrip("/")
+BASE_URL = API_BASE_URL
+RAG_PATH = os.getenv("DIGITAL_SHIELD_RAG_PATH", "/rag_chat")
+if not RAG_PATH.startswith("/"):
+    RAG_PATH = "/" + RAG_PATH
+RAG_API_URL = f"{API_BASE_URL}{RAG_PATH}"
+RAG_CANDIDATE_PATHS = [
+    RAG_PATH,
+    "/rag_chat",
+    "/rag",
+    "/rag/rag_chat",
+    "/rag/rag_chat_rag_chat_post",
+]
 
 # Configure the page
 st.set_page_config(
@@ -136,7 +140,10 @@ st.markdown("""
         color: white;
         border-radius: 20px;
         border: none;
-        padding: 0.5rem 1rem;
+        padding: 0.6rem 1.25rem;
+        font-weight: 600;
+        box-shadow: 0 4px 10px rgba(31, 78, 121, 0.15);
+        margin-top: 0.5rem;
     }
     
     .stButton > button:hover {
@@ -170,7 +177,7 @@ st.markdown("""
     .prediction-result {
         background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
         color: white;
-        padding: 2rem;
+        padding: 1.25rem;
         border-radius: 1rem;
         text-align: center;
         margin: 1rem 0;
@@ -180,7 +187,7 @@ st.markdown("""
     
     .prediction-result h2 {
         color: white;
-        font-size: 3rem;
+        font-size: 1.8rem;
         font-weight: bold;
         margin: 0;
         text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
@@ -255,6 +262,11 @@ st.markdown("""
         color: white;
     }
     
+    .risk-critical {
+        background: linear-gradient(135deg, #8B0000 0%, #5A0000 100%);
+        color: white;
+    }
+    
     .input-container {
         background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
         padding: 1.5rem;
@@ -265,13 +277,17 @@ st.markdown("""
     
     /* Cybersecurity Information Center styling */
     .card {
-        border-radius: 20px;
-        padding: 25px;
+        border-radius: 16px;
+        padding: 18px;
         text-align: center;
-        box-shadow: 0 0 25px rgba(255, 255, 255, 0.05);
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
         transition: all 0.3s ease;
-        height: 230px;
+        min-height: 150px;
         color: #fdf6e6;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 8px;
     }
     
     .card:hover {
@@ -280,14 +296,17 @@ st.markdown("""
     }
     
     .card-title {
-        font-size: 1.5rem;
+        font-size: 1.3rem;
         font-weight: bold;
-        margin-bottom: 10px;
+        margin-bottom: 8px;
     }
     
-    .card-icon {
-        font-size: 2.5rem;
-        margin-bottom: 10px;
+    .card-icon { display: none; }
+
+    .card p {
+        margin: 0;
+        font-size: 0.95rem;
+        line-height: 1.35;
     }
     
     .card-blue {
@@ -352,6 +371,73 @@ st.markdown("""
             from {opacity: 0; transform: translateY(-5px);}
             to {opacity: 1; transform: translateY(0);}
         }
+        
+        /* Unified medium card sizing - smaller */
+        .medium-card {
+            min-height: 140px;
+            padding: 0.9rem !important;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        /* Unified heading/value styles inside medium cards */
+        .medium-card h3 {
+            margin: 0;
+            text-align: center;
+            font-size: 1.05rem;
+            font-weight: 700;
+        }
+        .medium-card .metric-value {
+            margin: 0.25rem 0 0 0;
+            text-align: center;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #ffffff;
+        }
+        
+        /* Decorative curved arrows below section heading */
+        .arrows-header {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 16px;
+            margin: 0 0 8px 0;
+        }
+        .arrows-heading { margin: 0; color: #1f4e79; font-size: 1.75rem; font-weight: 700; }
+        .arrows-header a { display: none !important; }
+        .arrows-header svg {
+            width: 64px; height: 40px;
+            stroke: #1f4e79;
+            stroke-width: 3;
+            fill: none;
+            opacity: 0.9;
+            display: block;
+            transform-origin: 50% 50%;
+            animation: arrowBounce 1.8s ease-in-out infinite;
+            will-change: transform;
+        }
+
+        @keyframes arrowBounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(5px); }
+        }
+
+        /* Animated ellipsis for welcome text */
+        .ellipsis { display: inline-block; margin-left: 4px; }
+        .ellipsis span { 
+            display: inline-block; 
+            animation: dotFade 1.4s infinite ease-in-out; 
+            opacity: 0.2; 
+        }
+        .ellipsis span:nth-child(1) { animation-delay: 0s; }
+        .ellipsis span:nth-child(2) { animation-delay: 0.2s; }
+        .ellipsis span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes dotFade {
+            0%, 60%, 100% { opacity: 0.2; }
+            30% { opacity: 1; }
+        }
     </style>
 """, unsafe_allow_html=True)
 
@@ -376,34 +462,52 @@ def get_avatar_for_state(state):
     }
     return avatar_mapping.get(state, "../Digital_Shield_Avatars/Welcome.jpg")
 
-# Initialize RAG system
-@st.cache_resource
-def get_rag_system():
-    """Get or create the RAG system instance (cached for performance)"""
-    if RAG_AVAILABLE:
-        return RAGSystem()
-    return None
+def call_rag_api(query: str) -> Dict[str, Any]:
+    """Call external RAG API with retries/backoff and endpoint fallback, return response."""
+    max_attempts = int(os.getenv("DIGITAL_SHIELD_RAG_RETRIES", "3"))
+    base_timeout = float(os.getenv("DIGITAL_SHIELD_RAG_TIMEOUT", "45"))
+    backoff_seconds = float(os.getenv("DIGITAL_SHIELD_RAG_BACKOFF", "1.5"))
 
-def initialize_rag_system():
-    """Initialize the RAG system silently in the background"""
-    if RAG_AVAILABLE and 'rag_system' not in st.session_state:
-        # Initialize silently without showing spinner to users
-        rag_system = get_rag_system()
-        if rag_system:
-            success = rag_system.initialize()
-            if success:
-                st.session_state.rag_system = rag_system
-                st.session_state.rag_ready = True
-            else:
-                st.session_state.rag_ready = False
+    last_error = None
+    # Determine path resolution: reuse previously discovered working path if available
+    resolved_path = st.session_state.get("resolved_rag_path")
+    paths_to_try = [resolved_path] if resolved_path else []
+    # Append configured and common candidates, dedup while preserving order
+    for p in RAG_CANDIDATE_PATHS:
+        if p and p not in paths_to_try:
+            paths_to_try.append(p)
+
+    for attempt in range(1, max_attempts + 1):
+        for path in paths_to_try:
+            try:
+                path_norm = path if path.startswith("/") else "/" + path
+                url = f"{API_BASE_URL}{path_norm}"
+                resp = requests.post(url, json={"query": query}, timeout=base_timeout)
+                if resp.status_code == 404 or resp.status_code == 405:
+                    # Not found or method not allowed: try next candidate path
+                    last_error = Exception(f"HTTP {resp.status_code} at {url}: {resp.text[:200]}")
+                    continue
+                resp.raise_for_status()
+                data = resp.json() if resp.content else {}
+                # Cache the working path
+                st.session_state["resolved_rag_path"] = path_norm
+                return {
+                    "error": False,
+                    "response": data.get("response", ""),
+                    "suggested_queries": data.get("suggested_queries", []),
+                }
+            except Exception as e:
+                last_error = e
+                # try next path; if no more paths, backoff and retry the set
+        if attempt < max_attempts:
+            time.sleep(backoff_seconds * attempt)
         else:
-            st.session_state.rag_ready = False
-
-    return st.session_state.get('rag_system', None), st.session_state.get('rag_ready', False)
+            break
+    return {"error": True, "message": str(last_error) if last_error else "Unknown error"}
 
 # Helper function to generate responses using RAG system with LLM
 def generate_response(user_input, avatar_placeholder):
-    """Generate intelligent responses using RAG system with LLM fallback"""
+    """Generate intelligent responses using external RAG API."""
     input_lower = user_input.lower()
 
     # Set state to processing and update avatar
@@ -414,96 +518,52 @@ def generate_response(user_input, avatar_placeholder):
     else:
         avatar_placeholder.markdown("<div style='font-size: 100px; text-align: center;'></div>", unsafe_allow_html=True)
 
-    # Try to use RAG system first
-    rag_system, rag_ready = initialize_rag_system()
+    # Use external RAG API
+    result = call_rag_api(user_input)
+    if not result.get('error'):
+        response = result.get('response', '')
+        suggested = result.get('suggested_queries', [])
+        if suggested:
+            response += "\n\n💡 **You might also ask:**"
+            for i, suggestion in enumerate(suggested[:3], 1):
+                response += f"\n{i}. {suggestion}"
 
-    if rag_ready and rag_system:
-        try:
-            # Use RAG system to get intelligent response
-            result = rag_system.query(
-                user_input,
-                top_k=20,
-                similarity_threshold=0.7
-            )
-
-            if not result.get('error'):
-                response = result.get('response', '')
-
-                # Add suggested queries if available
-                suggested = result.get('suggested_queries', [])
-                if suggested:
-                    response += "\n\n💡 **You might also ask:**"
-                    for i, suggestion in enumerate(suggested[:3], 1):
-                        response += f"\n{i}. {suggestion}"
-
-                # Set state to success and update avatar
-                st.session_state.current_state = "success"
-                st.session_state.success_start_time = time.time()  # Start the success timer
-                avatar_path = get_avatar_for_state(st.session_state.current_state)
-                if os.path.exists(avatar_path):
-                    avatar_placeholder.image(avatar_path, width=150)
-                else:
-                    avatar_placeholder.markdown("<div style='font-size: 100px; text-align: center;'></div>", unsafe_allow_html=True)
-                
-                return response
-            else:
-                # RAG system error, fall back to hardcoded responses
-                st.session_state.current_state = "error"
-                avatar_path = get_avatar_for_state(st.session_state.current_state)
-                if os.path.exists(avatar_path):
-                    avatar_placeholder.image(avatar_path, width=150)
-                else:
-                    avatar_placeholder.markdown("<div style='font-size: 100px; text-align: center;'></div>", unsafe_allow_html=True)
-                st.warning("RAG system encountered an error, using fallback responses.")
-
-        except Exception as e:
-            st.session_state.current_state = "error"
-            avatar_path = get_avatar_for_state(st.session_state.current_state)
-            if os.path.exists(avatar_path):
-                avatar_placeholder.image(avatar_path, width=150)
-            else:
-                avatar_placeholder.markdown("<div style='font-size: 100px; text-align: center;'></div>", unsafe_allow_html=True)
-            st.warning(f"RAG system error: {e}. Using fallback responses.")
-
-    # If RAG system is not available, return a simple message
-    st.session_state.current_state = "error"
-    avatar_path = get_avatar_for_state(st.session_state.current_state)
-    if os.path.exists(avatar_path):
-        avatar_placeholder.image(avatar_path, width=150)
+        st.session_state.current_state = "success"
+        st.session_state.success_start_time = time.time()
+        avatar_path = get_avatar_for_state(st.session_state.current_state)
+        if os.path.exists(avatar_path):
+            avatar_placeholder.image(avatar_path, width=150)
+        else:
+            avatar_placeholder.markdown("<div style='font-size: 100px; text-align: center;'></div>", unsafe_allow_html=True)
+        return response
     else:
-        avatar_placeholder.markdown("<div style='font-size: 100px; text-align: center;'></div>", unsafe_allow_html=True)
-    return f"""I apologize, but I'm currently unable to process your request: "{user_input}"
-Please try again later or contact support for assistance."""
+        st.session_state.current_state = "error"
+        avatar_path = get_avatar_for_state(st.session_state.current_state)
+        if os.path.exists(avatar_path):
+            avatar_placeholder.image(avatar_path, width=150)
+        else:
+            avatar_placeholder.markdown("<div style='font-size: 100px; text-align: center;'></div>", unsafe_allow_html=True)
+        return f"There was an error contacting the RAG service: {result.get('message', 'Unknown error')}"
 
-# Financial Loss Model Functions
-def load_model():
-    """Load the trained financial loss model"""
+def call_financial_loss_api(features: Dict[str, Any]) -> Dict[str, Any]:
+    """Call external Financial Loss API at /predict_financial_loss and return status/data."""
     try:
-        # Try multiple possible paths for the model
-        possible_paths = [
-            project_root / "Digital_Shield_Packages" / "models" / "financial_loss_xgboost.pkl",
-            project_root / "models" / "financial_loss_xgboost.pkl",
-            Path("Digital_Shield_Packages/models/financial_loss_xgboost.pkl"),
-            Path("models/financial_loss_xgboost.pkl"),
-            Path("../Digital_Shield_Packages/models/financial_loss_xgboost.pkl"),
-            Path("../../Digital_Shield_Packages/models/financial_loss_xgboost.pkl")
-        ]
-        
-        model_path = None
-        for path in possible_paths:
-            if path.exists():
-                model_path = str(path)
-                break
-        
-        if model_path is None:
-            st.error(f"Model file not found. Please ensure the model file exists in the correct location.")
-            return None
-        
-        model_artifact = ModelSaver.load_model(model_path)
-        return model_artifact
+        # Use flat payload per service contract
+        payload = features
+        response = requests.post(
+            f"{BASE_URL}/predict_financial_loss",
+            json=payload,
+            headers={"Content-Type": "application/json"},
+            timeout=30
+        )
+        data = None
+        try:
+            data = response.json() if response.content else None
+        except Exception:
+            data = None
+        return {"status_code": response.status_code, "data": data, "text": response.text}
     except Exception as e:
-        st.error(f"Error loading model: {str(e)}")
-        return None
+        return {"status_code": None, "error": str(e)}
 
 def get_smart_defaults(attack_type, target_industry, affected_users, data_breach_gb):
     """Calculate smart defaults based on user inputs"""
@@ -786,7 +846,7 @@ def rag_chatbot_page():
     # Back button at the top
     col_back, col_space = st.columns([1, 4])
     with col_back:
-        if st.button("🏠 Back to Main Dashboard", key="btn_back_rag"):
+        if st.button("Back to Main Dashboard", key="btn_back_rag"):
             st.session_state.current_tab = "Main Dashboard"
             st.rerun()
     
@@ -922,73 +982,23 @@ def rag_chatbot_page():
 
 # Financial Loss Model Page
 def financial_loss_page():
-    """Financial Loss Model page with interactive components"""
+    """Financial Loss Model page with interactive components (via external API)"""
     # Back button at the top
     col_back, col_space = st.columns([1, 4])
     with col_back:
-        if st.button("🏠 Back to Main Dashboard", key="btn_back_financial"):
+        if st.button("Back to Main Dashboard", key="btn_back_financial"):
             st.session_state.current_tab = "Main Dashboard"
             st.rerun()
     
     st.markdown('<h1 class="main-header">💰 Financial Loss Predictor</h1>', unsafe_allow_html=True)
     st.markdown('<p class="sub-header">AI-Powered Financial Risk Assessment for Cybersecurity Incidents</p>', unsafe_allow_html=True)
     
-    if not MODEL_AVAILABLE:
-        st.error("Financial loss model is not available. Please check the import paths.")
-        return
     
-    # Load model
-    with st.spinner("Loading financial loss model..."):
-        model_artifact = load_model()
-    
-    if model_artifact is None:
-        st.error("Failed to load the model. Please check if the model file exists.")
-        return
-    
-    st.markdown('<div class="success-box">✅ Model loaded successfully!</div>', unsafe_allow_html=True)
-    
-    # Display model metrics
-    if "metrics" in model_artifact:
-        metrics = model_artifact["metrics"]
-        st.markdown('<h2 class="section-header">📊 Model Performance</h2>', unsafe_allow_html=True)
-        
-        col1, col2, col3, col4 = st.columns(4)
-        
-        with col1:
-            st.markdown(f"""
-            <div class="metric-card">
-                <h3>R² Score</h3>
-                <p>{metrics.get('R2', 0):.4f}</p>
-            </div>
-            """, unsafe_allow_html=True)
-        with col2:
-            st.markdown(f"""
-            <div class="metric-card">
-                <h3>MAE</h3>
-                <p>{metrics.get('MAE', 0):.2f}</p>
-            </div>
-            """, unsafe_allow_html=True)
-        with col3:
-            st.markdown(f"""
-            <div class="metric-card">
-                <h3>RMSE</h3>
-                <p>{metrics.get('RMSE', 0):.2f}</p>
-            </div>
-            """, unsafe_allow_html=True)
-        with col4:
-            st.markdown(f"""
-            <div class="metric-card">
-                <h3>sMAPE</h3>
-                <p>{metrics.get('sMAPE', 0):.2f}%</p>
-            </div>
-            """, unsafe_allow_html=True)
     
     # Create input form
     st.markdown('<h2 class="section-header">🔧 Enter Your Incident Details</h2>', unsafe_allow_html=True)
     
     with st.container():
-        st.markdown('<div class="input-container">', unsafe_allow_html=True)
-        
         col1, col2 = st.columns(2)
         
         with col1:
@@ -1024,136 +1034,199 @@ def financial_loss_page():
                 help="Which industry was targeted?"
             )
         
-        st.markdown('</div>', unsafe_allow_html=True)
+        
     
     # Prediction button
     if st.button("🔮 Predict Financial Loss", type="primary"):
         with st.spinner("Calculating prediction..."):
-            # Get smart defaults
-            smart_defaults = get_smart_defaults(attack_type, target_industry, affected_users, data_breach_gb)
-            
-            # Prepare complete input data
-            input_data = {
-                'year': smart_defaults['year'],
-                'number of affected users': affected_users,
-                'incident resolution time (in hours)': smart_defaults['incident resolution time (in hours)'],
-                'data breach in gb': data_breach_gb,
-                'country': smart_defaults['country'],
-                'attack type': attack_type,
-                'target industry': target_industry,
-                'security vulnerability type': smart_defaults['security vulnerability type'],
-                'defense mechanism used': smart_defaults['defense mechanism used'],
-                'severity_kmeans': smart_defaults['severity_kmeans']
+            # Build features for API (flat JSON)
+            api_features = {
+                "number_of_affected_users": int(affected_users),
+                "data_breach_size_gb": float(data_breach_gb),
+                "attack_type": attack_type,
+                "target_industry": target_industry,
             }
-            
-            prediction, processed_data = make_prediction(model_artifact, input_data)
-        
-        if prediction is not None:
-            # Display prediction result
+            api_result = call_financial_loss_api(api_features)
+
+        if api_result.get("status_code") == 200 and api_result.get("data"):
+            result = api_result["data"]
+
+            prediction = float(result.get('prediction', 0) or 0)
+            severity_label = result.get('severity')
+            # Display prediction result and risk assessment side by side
             st.markdown('<h2 class="section-header">💰 Prediction Result</h2>', unsafe_allow_html=True)
-            
-            # Main prediction display
-            st.markdown(f"""
-            <div class="prediction-result">
-                <h2>${prediction:,.2f} Million</h2>
-                <p>Predicted Financial Loss</p>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            # Risk assessment and confidence interval
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                # Risk level based on prediction
+            col_left, col_right = st.columns(2)
+            with col_left:
+                # Color the card by magnitude of predicted loss
                 if prediction < 10:
+                    loss_class = "risk-low"
+                elif prediction < 50:
+                    loss_class = "risk-medium"
+                else:
+                    loss_class = "risk-high"
+                st.markdown(f"""
+                <div class="metric-card medium-card {loss_class}">
+                    <h3>Predicted Financial Loss</h3>
+                    <p class="metric-value">${prediction:,.2f} Million</p>
+                </div>
+                """, unsafe_allow_html=True)
+            with col_right:
+                # Risk level based on API severity
+                sev = (severity_label or "").strip().lower()
+                if sev == "low":
                     risk_level = "Low Risk"
                     risk_class = "risk-low"
-                elif prediction < 50:
+                elif sev == "medium":
                     risk_level = "Medium Risk"
                     risk_class = "risk-medium"
-                else:
+                elif sev == "high":
                     risk_level = "High Risk"
                     risk_class = "risk-high"
-                
+                elif sev == "critical":
+                    risk_level = "Critical Risk"
+                    risk_class = "risk-critical"
+                else:
+                    risk_level = "Unknown Risk"
+                    risk_class = "risk-medium"
                 st.markdown(f"""
-                <div class="metric-card {risk_class}">
-                    <h3>{risk_level}</h3>
-                    <p>Risk Assessment</p>
+                <div class="metric-card medium-card {risk_class}">
+                    <h3>Risk Assessment</h3>
+                    <p class=\"metric-value\">{risk_level}</p>
                 </div>
                 """, unsafe_allow_html=True)
             
-            with col2:
-                # Confidence interval (simplified)
-                confidence_lower = prediction * 0.8
-                confidence_upper = prediction * 1.2
-                
-                st.markdown(f"""
-                <div class="metric-card">
-                    <h3>Confidence Interval</h3>
-                    <p>${confidence_lower:,.1f}M - ${confidence_upper:,.1f}M</p>
-                </div>
-                """, unsafe_allow_html=True)
             
-            # Visualization
-            st.markdown('<h2 class="section-header">📊 Prediction Visualization</h2>', unsafe_allow_html=True)
             
-            # Create a bar chart showing the prediction
-            fig = go.Figure(data=[
-                go.Bar(
-                    x=['Predicted Loss'],
-                    y=[prediction],
-                    marker_color='#ff6b6b',
-                    text=[f'${prediction:,.1f}M'],
-                    textposition='auto',
-                    textfont=dict(size=20, color='white'),
-                )
-            ])
-            
-            fig.update_layout(
-                title=dict(
-                    text="Financial Loss Prediction",
-                    font=dict(size=24, color='#2d3436')
-                ),
-                yaxis_title="Loss (Million $)",
-                showlegend=False,
-                height=500,
-                plot_bgcolor='rgba(0,0,0,0)',
-                paper_bgcolor='rgba(0,0,0,0)',
-                font=dict(size=16)
+            # Guidance banner with dynamic title (severity only), static body
+            sev = (severity_label or '').strip().lower()
+            sev_title = (
+                'Low' if sev == 'low' else
+                'Medium' if sev == 'medium' else
+                'High' if sev == 'high' else
+                'Critical' if sev == 'critical' else
+                'Risk'
             )
-            
-            st.plotly_chart(fig, use_container_width=True)
-            
-            # Warning for high predictions
-            if prediction > 100:
-                st.markdown("""
-                <div class="warning-box">
-                    ⚠️ <strong>High Risk Warning:</strong> This prediction indicates a very high financial loss. 
-                    Consider immediate security measures and incident response protocols.
-                </div>
-                """, unsafe_allow_html=True)
-            elif prediction > 50:
-                st.markdown("""
-                <div class="warning-box">
-                    ⚠️ <strong>Medium Risk Warning:</strong> This prediction indicates a significant financial loss. 
-                    Review your security measures and incident response capabilities.
-                </div>
-                """, unsafe_allow_html=True)
+            st.markdown(f"""
+            <div class="warning-box">
+                ⚠️ <strong>{sev_title} Risk Notice:</strong> This prediction indicates a financial risk. 
+                Take appropriate security actions and consult the Ḥimā chatbot for personalized recommendations.
+            </div>
+            """, unsafe_allow_html=True)
+        else:
+            status_code = api_result.get("status_code")
+            if status_code is None and api_result.get("error"):
+                st.error(f"❌ Error: {api_result.get('error')}")
+            else:
+                st.error(f"❌ Error: {status_code}")
+                st.code(api_result.get("text", ""))
             
 
 # Cybersecurity Information Center Page
 def cybersecurity_info_page():
-    """Cybersecurity Information Center page - Empty placeholder"""
+    """Cybersecurity Information Center page - Curated reference content"""
     # Back button at the top
     col_back, col_space = st.columns([1, 4])
     with col_back:
-        if st.button("🏠 Back to Main Dashboard", key="btn_back_cyber"):
+        if st.button("Back to Main Dashboard", key="btn_back_cyber"):
             st.session_state.current_tab = "Main Dashboard"
             st.rerun()
-    
-    # Empty page content
-    st.markdown('<h1 class="main-header">ℹ️ Cybersecurity Information Center</h1>', unsafe_allow_html=True)
-    st.markdown('<p class="sub-header">This page is currently empty</p>', unsafe_allow_html=True)
+
+    # Page header
+    st.markdown('<h1 class="main-header">Cybersecurity Information Center</h1>', unsafe_allow_html=True)
+    st.markdown('<p class="sub-header">Concise definitions, how attacks happen, and practical defenses</p>', unsafe_allow_html=True)
+
+    # Attack Types
+    st.markdown('<h2 class="section-header">Attack Types</h2>', unsafe_allow_html=True)
+    with st.expander("Phishing – Social-engineering messages that trick users", expanded=False):
+        st.markdown(
+            """
+            - **Definition**: Deceptive emails, links, or messages that trick people into revealing credentials or running malware.
+            - **How it happens**: Attacker spoofs the sender or creates fake sites; the user clicks a link or enters credentials.
+            """
+        )
+    with st.expander("DDoS (Distributed Denial of Service) – Flooding a target to make it unavailable.", expanded=False):
+        st.markdown(
+            """
+            - **Definition**: Massive traffic or request floods that overwhelm services or network links.
+            - **How it happens**: Botnets or spoofed request floods attack bandwidth or application resources.
+            """
+        )
+    with st.expander("Man-in-the-Middle (MitM) – Intercepting or altering communications.", expanded=False):
+        st.markdown(
+            """
+            - **Definition**: Intercepting or changing messages between two parties to eavesdrop or tamper.
+            - **How it happens**: On insecure Wi‑Fi, poorly configured TLS, or compromised routers/switches.
+            """
+        )
+    with st.expander("SQL Injection – Injecting SQL to read/modify databases.", expanded=False):
+        st.markdown(
+            """
+            - **Definition**: Crafted input alters SQL queries to access or modify data.
+            - **How it happens**: Poor input validation and string‑concatenated queries in applications.
+            """
+        )
+    with st.expander("Malware – General-purpose malicious software (virus, trojan, RAT).", expanded=False):
+        st.markdown(
+            """
+            - **Definition**: Software designed to harm, steal, or persist (viruses, trojans, remote access tools).
+            - **How it happens**: Delivered via attachments, downloads, compromised sites, or removable media.
+            """
+        )
+    with st.expander("Ransomware – Malware that encrypts files and demands ransom.", expanded=False):
+        st.markdown(
+            """
+            - **Definition**: Malware that encrypts data and extorts payment for decryption.
+            - **How it happens**: Delivered via phishing, exposed RDP, or malicious downloads.
+            """
+        )
+
+    # Defense Mechanisms
+    st.markdown('<h2 class="section-header">Defense Mechanisms</h2>', unsafe_allow_html=True)
+    with st.expander("Firewall – Filters traffic and enforces network rules."):
+        st.markdown(
+            """
+            - **What it is**: Packet/connection filter that controls allowed traffic.
+            - **When it helps**: Blocks unwanted ports/services and isolates segments.
+            - **Quick steps**: Maintain policy, block unused ports, log alerts, and combine with IDS.
+            """
+        )
+    with st.expander("Intrusion Detection / Prevention (IDS/IPS)"):
+        st.markdown(
+            """
+            - **What it is**: Monitors traffic or hosts for known bad patterns and alerts or blocks.
+            - **When it helps**: Early detection of attacks and anomalous behavior.
+            - **Quick steps**: Tune signatures, feed alerts into SOC workflows, use alongside EDR.
+            """
+        )
+    with st.expander("Encryption – Protects data confidentiality at rest and in transit."):
+        st.markdown(
+            """
+            - **What it is**: Transforming data so only authorized parties can read it (keys).
+            - **When it helps**: Protects data even if storage or network is compromised.
+            - **Quick steps**: Use strong algorithms, manage keys securely, encrypt backups.
+            """
+        )
+
+    # Vulnerability Types
+    st.markdown('<h2 class="section-header">Vulnerability Types</h2>', unsafe_allow_html=True)
+    with st.expander("Zero‑Day – Vulnerability exploited before a patch exists."):
+        st.markdown(
+            """
+            - **Definition**: A flaw unknown to the vendor and unpatched when exploited.
+            """
+        )
+    with st.expander("Weak Authentication – Easy‑to‑guess or reused credentials."):
+        st.markdown(
+            """
+            - **Definition**: Passwords or authentication methods that attackers can easily bypass.
+            """
+        )
+    with st.expander("Unpatched Software – Known flaws without vendor fixes applied"):
+        st.markdown(
+            """
+            - **Definition**: Systems missing vendor updates that fix vulnerabilities.
+            """
+        )
 
 # Main Dashboard Page
 def main_dashboard_page():
@@ -1176,71 +1249,121 @@ def main_dashboard_page():
             </div>
             """, unsafe_allow_html=True)
         else:
-            st.markdown('<h1 class="main-header">🛡️ Ḥimā - Digital Shield</h1>', unsafe_allow_html=True)
+            pass
     except Exception as e:
-        st.markdown('<h1 class="main-header">🛡️ Ḥimā - Digital Shield</h1>', unsafe_allow_html=True)
+        pass
     
     # Main title and subtitle
     st.markdown('<h1 class="main-header">Digital Shield</h1>', unsafe_allow_html=True)
     st.markdown('<p class="sub-header">AI-Powered Financial Risk & Cybersecurity Intelligence</p>', unsafe_allow_html=True)
     
-    # Welcome message
-    st.markdown("""
-    <div style="text-align: center; color: #666; font-size: 1.2rem; margin-bottom: 3rem; max-width: 800px; margin-left: auto; margin-right: auto;">
-        Welcome to <strong>Digital Shield</strong> — your intelligent dashboard for analyzing cybersecurity data and predicting potential financial losses.
-        Harness the power of machine learning and AI chat assistance to make informed, data-driven security decisions.
-    </div>
-    """, unsafe_allow_html=True)
+    # Welcome message with typing animation (runs once per session)
+    full_welcome_text_plain = (
+        "Welcome to Digital Shield - your intelligent dashboard for analyzing cybersecurity data and predicting potential financial losses. "
+        "Harness the power of machine learning and AI chat assistance to make informed, data-driven security decisions"
+    )
+    full_welcome_text_rich = (
+        "Welcome to <strong>Digital Shield</strong> — your intelligent dashboard for analyzing cybersecurity data and predicting potential financial losses. "
+        "Harness the power of machine learning and AI chat assistance to make informed, data-driven security decisions"
+    )
+    if "welcome_typed_done" not in st.session_state:
+        st.session_state.welcome_typed_done = False
+
+    welcome_placeholder = st.empty()
+    if not st.session_state.welcome_typed_done:
+        typed = ""
+        for ch in full_welcome_text_plain:
+            typed += ch
+            welcome_placeholder.markdown(
+                f"""
+                <div style=\"text-align: center; color: #666; font-size: 1.2rem; margin-bottom: 3rem; max-width: 800px; margin-left: auto; margin-right: auto;\">
+                    {html.escape(typed)}<span style=\"display:inline-block;width:10px;color:#1f4e79;\">|</span>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+            time.sleep(0.012)
+        st.session_state.welcome_typed_done = True
+        # Render final without cursor
+        welcome_placeholder.markdown(
+            f"""
+            <div style=\"text-align: center; color: #666; font-size: 1.2rem; margin-bottom: 3rem; max-width: 800px; margin-left: auto; margin-right: auto;\">
+                {full_welcome_text_rich}<span class=\"ellipsis\"><span>.</span><span>.</span><span>.</span></span>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    else:
+        welcome_placeholder.markdown(
+            f"""
+            <div style=\"text-align: center; color: #666; font-size: 1.2rem; margin-bottom: 3rem; max-width: 800px; margin-left: auto; margin-right: auto;\">
+                {full_welcome_text_rich}<span class=\"ellipsis\"><span>.</span><span>.</span><span>.</span></span>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
     
-    # Feature cards
-    st.markdown('<h2 style="text-align: center; color: #1f4e79; margin-bottom: 2rem;">Choose Your Tool</h2>', unsafe_allow_html=True)
+    # Feature cards heading flanked by arrows
+    st.markdown(
+        """
+        <div class="arrows-header">
+            <svg viewBox="0 0 64 40" xmlns="http://www.w3.org/2000/svg">
+                <path d="M2 2 C 20 30, 44 30, 62 2" />
+                <path d="M2 12 C 20 34, 44 34, 62 12" />
+            </svg>
+            <div class="arrows-heading">Choose your Digital Shield</div>
+            <svg viewBox="0 0 64 40" xmlns="http://www.w3.org/2000/svg">
+                <path d="M2 2 C 20 30, 44 30, 62 2" />
+                <path d="M2 12 C 20 34, 44 34, 62 12" />
+            </svg>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
     
     col1, col2, col3 = st.columns(3)
     
     with col1:
         st.markdown("""
         <div class='card card-blue' style="cursor: pointer; transition: all 0.3s ease;">
-            <div class='card-icon'>💹</div>
             <div class='card-title'>Financial Loss Model</div>
             <p>Predict potential monetary loss from cybersecurity incidents with precision.</p>
         </div>
         """, unsafe_allow_html=True)
         
-        if st.button("💰 Go to Financial Loss Model", key="btn_financial", use_container_width=True):
+        if st.button("Go to Financial Loss Model", key="btn_financial", use_container_width=True):
             st.session_state.current_tab = "Financial Loss Model"
             st.rerun()
     
     with col2:
         st.markdown("""
         <div class='card card-cyan' style="cursor: pointer; transition: all 0.3s ease;">
-            <div class='card-icon'>🤖</div>
-            <div class='card-title'>RAG Chatbot</div>
-            <p>Chat with an intelligent assistant to gain instant insights and explanations.</p>
+            <div class='card-title'>Hima Chatbot</div>
+            <p>Get instant, AI-driven cyber insights, guidance, and clear explanations.</p>
         </div>
         """, unsafe_allow_html=True)
         
-        if st.button("🤖 Go to RAG Chatbot", key="btn_rag", use_container_width=True):
+        if st.button("Go to Hima Chatbot", key="btn_rag", use_container_width=True):
             st.session_state.current_tab = "RAG Chatbot"
             st.rerun()
     
     with col3:
         st.markdown("""
         <div class='card card-purple' style="cursor: pointer; transition: all 0.3s ease;">
-            <div class='card-icon'>ℹ️</div>
             <div class='card-title'>Cybersecurity Information Center</div>
             <p>Access comprehensive information about attacks, defenses, and vulnerabilities.</p>
         </div>
         """, unsafe_allow_html=True)
         
-        if st.button("ℹ️ Go to Information Center", key="btn_info", use_container_width=True):
+        if st.button("Go to Information Center", key="btn_info", use_container_width=True):
             st.session_state.current_tab = "Cybersecurity Information Center"
             st.rerun()
     
-    # Footer
+    # Footer (simple text, no emoji or card styling)
     st.markdown("""
-    <div style="text-align: center; padding: 2rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 1rem; margin: 3rem 0;">
-        <h2 style="color: white; margin: 0;">🔒 Digital Shield</h2>
-        <p style="color: #f0f0f0; margin: 0.5rem 0 0 0;">Securing Your Digital World with Saudi Heritage of Protection</p>
+    <div style="text-align: center; padding: 1rem 0; color: #555; margin-top: 2rem;">
+        <strong>Digital Shield</strong> — Securing Your Digital World with Saudi Heritage of Protection<br/>
+        <span style="font-size: 0.95rem; color: #777;">built with <span style="color:#e25555;">❤</span> by Majid, Nawaf, Nouf, Rawaf</span>
     </div>
     """, unsafe_allow_html=True)
 
