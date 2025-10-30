@@ -32,7 +32,7 @@ A predictive model that estimates financial damage based on attack parameters su
 
 When a high-risk result is detected, the system recommends consulting Hima, the AI cybersecurity assistant, for guidance.
 
-![Financial Loss Model](./UI_DigitalShield/Digital_Shield_UI/images/financial_loss_model.jpg)
+![Financial Loss Model](./Digital_Shield_UI/images/financial_loss_model.png)
 
 ---
 
@@ -45,7 +45,7 @@ Users can:
 - Seek business-specific recommendations  
 - Get instant, actionable responses  
 
-![Hima Chatbot](./UI_DigitalShield/Digital_Shield_UI/images/hima_chatbot.jpg)
+![Hima Chatbot](./Digital_Shield_UI/images/hima_chatbot.jpg)
 
 ---
 
@@ -57,7 +57,7 @@ A quick-access library of essential security knowledge — all in one place:
 
 This center helps security teams learn faster and act with clarity during incidents.
 
-![Cybersecurity Information Center](./UI_DigitalShield/Digital_Shield_UI/images/cyber_info_center.jpg)
+![Cybersecurity Information Center](./Digital_Shield_UI/images/cyber_info_center.jpg)
 
 ---
 
