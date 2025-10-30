@@ -75,7 +75,7 @@ Predictive Modeling: XGBoost
 
 👥 Team
 
-Majid AlShehri - RAG integration, data preprocessing, and front-end design
+Majid AlShehri - RAG integration, Data preprocessing, and Frontend development
 
 Nawaf Alfify - Data preprocessing, cloud integration
 
