@@ -19,7 +19,7 @@ A real-time overview of all cybersecurity metrics including:
 - Financial loss analysis  
 - Risk levels per region or attack type  
 
-![Main Dashboard](./UI_DigitalShield/Digital_Shield_UI/images/main_dashboard.jpg)
+![Main Dashboard](./Digital_Shield_UI/images/main_dashboard.jpg)
 
 ---
 
